@@ -1,0 +1,43 @@
+# This file defines the rules for the RulesBasedRoutingEngine.
+# Rules are evaluated in order of priority (critical -> high -> normal -> low).
+# The first rule that matches a given context determines the routing decision.
+
+- name: "Urgent Keywords"
+  description: "Routes content containing high-priority keywords directly to a human."
+  rule_type: "keyword_match"
+  decision: "human"
+  priority: "critical"
+  is_enabled: true
+  condition:
+    keywords: ["urgent", "asap", "critical", "outage"]
+    case_sensitive: false
+
+- name: "Complaint Keywords"
+  description: "Routes messages that appear to be complaints to a human for review."
+  rule_type: "keyword_match"
+  decision: "human"
+  priority: "high"
+  is_enabled: true
+  condition:
+    keywords: ["complaint", "unacceptable", "terrible", "horrible", "refund"]
+    case_sensitive: false
+
+- name: "Low LLM Confidence"
+  description: "If the LLM is not confident in its analysis, escalate to a human."
+  rule_type: "confidence_threshold"
+  decision: "human"
+  priority: "normal"
+  is_enabled: true
+  condition:
+    operator: "lt"  # "less than"
+    threshold: 0.75 # If confidence is less than 75%, route to human.
+
+- name: "Default to Automatic"
+  description: "A low-priority catch-all rule to automatically process anything that hasn't been escalated."
+  rule_type: "confidence_threshold"
+  decision: "automatic"
+  priority: "low"
+  is_enabled: true
+  condition:
+    operator: "gte" # "greater than or equal to"
+    threshold: 0.0  # This will match any content that has a confidence score.

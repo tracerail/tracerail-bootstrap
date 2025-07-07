@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "temporal"]
+      interval: 5s
+      retries: 10
+
+  temporal:
+    image: temporalio/auto-setup:1.28.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: postgres
+    ports: ["7233:7233"]
+
+  temporal-ui:
+    image: temporalio/ui:2.39.0
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on: [temporal]
+    ports: ["8233:8080"]
+
+  flowable-dmn:
+    image: flowable/flowable-rest:7.0.0
+    environment:
+      FLOWABLE_COMMON_APP_IDM-ADMIN_USER: admin
+      FLOWABLE_COMMON_APP_IDM-ADMIN_PASSWORD: test
+    ports: ["8082:8080"]
+
+  task-bridge:
+    build: ./task_bridge # FastAPI small service → Temporal Signal
+    environment:
+      TEMPORAL_HOST: temporal:7233
+    depends_on: [temporal]
+    ports: ["7070:7070"]
+
+  grafana:
+    image: grafana/grafana-oss:11.0.0
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:
