@@ -39,12 +39,19 @@ services:
       FLOWABLE_COMMON_APP_IDM-ADMIN_PASSWORD: test
     ports: ["8082:8080"]
 
-  task-bridge:
-    build: ./task_bridge # FastAPI small service → Temporal Signal
+  bridge:
+    build:
+      context: ../tracerail-task-bridge
     environment:
-      TEMPORAL_HOST: temporal:7233
-    depends_on: [temporal]
-    ports: ["7070:7070"]
+      # The TEMPORAL_HOST is the service name defined in this file.
+      # Docker's internal DNS will resolve 'temporal' to the correct container.
+      TEMPORAL_HOST: temporal
+    depends_on:
+      - temporal
+    ports:
+      # Exposes the service on the host machine at port 7070,
+      # forwarding to the container's port 8000 (Uvicorn's default).
+      - "7070:8000"
 
   grafana:
     image: grafana/grafana-oss:11.0.0

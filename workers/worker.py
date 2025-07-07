@@ -14,6 +14,11 @@ import sys
 # Add the project root to the Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file in the project root
+load_dotenv()
+
 try:
     from temporalio.client import Client
     from temporalio.worker import Worker
@@ -67,7 +72,7 @@ async def main():
         )
         await worker.run()
 
-    except* ConnectionRefusedError:
+    except ConnectionRefusedError:
         logging.error(f"❌ Connection refused. Is the Temporal service running at {temporal_address}?")
         logging.error("   You can start the service with: `make up`")
         sys.exit(1)

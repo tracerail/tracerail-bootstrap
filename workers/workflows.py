@@ -74,7 +74,7 @@ class ExampleWorkflow:
             # This is where a task would be created and the system would wait
             # for a human to interact with it, for example, via the Task Bridge.
             try:
-                await workflow.wait_for(lambda: self._human_decision_result is not None, timeout=timedelta(hours=24))
+                await workflow.wait_condition(lambda: self._human_decision_result is not None, timeout=timedelta(hours=24))
                 workflow.logger.info(f"Signal received! Human decision: '{self._human_decision_result}'")
                 final_status = f"COMPLETED_BY_HUMAN ({self._human_decision_result})"
             except TimeoutError:

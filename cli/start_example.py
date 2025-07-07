@@ -13,12 +13,17 @@ from pathlib import Path
 # Add the project root to the Python path to allow for absolute imports
 sys.path.append(str(Path(__file__).parent.parent))
 
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file in the project root
+load_dotenv()
+
 try:
     import tracerail
     # This workflow will be created in the next step
     from workers.workflows import ExampleWorkflow
     from temporalio.client import WorkflowHandle
-    from temporalio.exceptions import RPCError
+    from temporalio.service import RPCError
 except ImportError as e:
     print(f"⚠️  Import error: {e}. Make sure dependencies are installed with 'poetry install'.")
     sys.exit(1)
@@ -58,7 +63,8 @@ async def main(text_input: str):
 
             print("\n⏳ Waiting for workflow to complete...")
             try:
-                result = await handle.result(timeout=60)
+                # Use asyncio.wait_for to handle the timeout correctly
+                result = await asyncio.wait_for(handle.result(), timeout=60.0)
                 print("\n🎉 Workflow completed!")
                 print(f"   Result: {result}")
             except asyncio.TimeoutError:

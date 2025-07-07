@@ -1,4 +1,4 @@
-.PHONY: help setup up down logs worker clean start-example deploy-dmn
+.PHONY: help setup up down logs worker clean start-example deploy-dmn debug-bridge-build
 
 help:
 	@echo "TraceRail Bootstrap - Application Stack Commands"
@@ -17,6 +17,9 @@ help:
 	@echo "Workflow Interaction:"
 	@echo "  start-example  Run a sample workflow with a test message"
 	@echo "  deploy-dmn     Deploy DMN files from the /dmn directory to Flowable"
+	@echo ""
+	@echo "Debugging:"
+	@echo "  debug-bridge-build  Run a verbose, no-cache build for the bridge service"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make setup     # Run interactive setup"
@@ -53,3 +56,10 @@ start-example:
 
 deploy-dmn:
 	poetry run python bin/deploy-dmn.py
+
+debug-bridge-build:
+	@echo "🛠️  Debugging the bridge service build..."
+	@echo "Stopping and removing any old bridge containers..."
+	@docker compose rm -s -f bridge || true
+	@echo "Building bridge service with verbose output (this may take a moment)..."
+	@docker compose build --no-cache --progress=plain bridge
