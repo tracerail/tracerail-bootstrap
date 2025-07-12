@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds.
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+    # Scrape Prometheus itself to monitor its health.
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "tracerail-task-bridge"
+    # This job scrapes the metrics from our FastAPI application.
+    # We use 'host.docker.internal' which is a special DNS name inside Docker
+    # that resolves to the host machine's IP address. This allows the Prometheus
+    # container to access the API server running on your local machine.
+    # Note: On some Linux distributions, you may need to add the following
+    # to your docker-compose service definition for this to work:
+    # extra_hosts:
+    #  - "host.docker.internal:host-gateway"
+    static_configs:
+      # The target is the service name 'bridge' as defined in docker-compose.yml
+      - targets: ["bridge:8000"]
+        labels:
+          service: "tracerail-task-bridge"
+
+  # --- Optional: Uncomment to scrape Temporal Server metrics ---
+  # This requires your Temporal server to have its metrics endpoint enabled.
+  # The default Temporal dev server (`temporalite`) may not expose this by default.
+  # If you are using the official Temporal docker image, you would expose its metrics port.
+  # The default port for Temporal server metrics is also 9090, so you would need
+  # to map it to a different host port to avoid collision with Prometheus.
+  # For example, if you mapped Temporal's 9090 to the host's 9091:
+  # - job_name: "temporal-server"
+  #   static_configs:
+  #     - targets: ["host.docker.internal:9091"]
+  #       labels:
+  #         service: "temporal-server"

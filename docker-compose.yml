@@ -41,7 +41,8 @@ services:
 
   bridge:
     build:
-      context: ../tracerail-task-bridge
+      context: ..
+      dockerfile: tracerail-task-bridge/Dockerfile
     environment:
       # The TEMPORAL_HOST is the service name defined in this file.
       # Docker's internal DNS will resolve 'temporal' to the correct container.
@@ -49,13 +50,58 @@ services:
     depends_on:
       - temporal
     ports:
-      # Exposes the service on the host machine at port 7070,
+      # Exposes the service on the host machine at port 8000,
       # forwarding to the container's port 8000 (Uvicorn's default).
-      - "7070:8000"
+      - "8000:8000"
+
+  worker:
+    build:
+      context: ../tracerail-core
+    environment:
+      # The TEMPORAL_HOST is the service name defined in this file.
+      # Docker's internal DNS will resolve 'temporal' to the correct container.
+      TEMPORAL_HOST: temporal
+    depends_on:
+      - temporal
+      - bridge
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana-oss:11.0.0
-    ports: ["3000:3000"]
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      # This mount makes our provisioning configuration (for datasources and
+      # dashboard providers) available to the Grafana container.
+      - ./observability/grafana/provisioning/:/etc/grafana/provisioning/
+
+      # This mount makes our dashboard JSON files available to the container
+      # at the path specified in our dashboard provider configuration.
+      - ./observability/grafana/dashboards/:/var/lib/grafana/dashboards/
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
 
 volumes:
   pgdata:
