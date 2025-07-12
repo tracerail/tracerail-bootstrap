@@ -1,92 +1,48 @@
-# TraceRail Bootstrap
+# TraceRail Platform Bootstrap
 
-This repository provides a runnable application stack that demonstrates how to use the **[tracerail-core](https://github.com/tracerail/tracerail-core)** library. It spins up all the necessary backend services to run a complete, end-to-end AI workflow.
+This repository is the central development and bootstrapping environment for the TraceRail platform. It contains the necessary Docker Compose configurations, documentation, and helper scripts to launch and manage the entire suite of TraceRail services for local development.
 
-*   **Core Logic**: Uses the **[tracerail-core](https://github.com/tracerail/tracerail-core)** library for all workflow, LLM, and routing orchestration.
-*   **Durable Workflows**: **Temporal OSS** for stateful, reliable execution.
-*   **Human-in-the-Loop**: A simple **Task Bridge** (FastAPI service) to send human decisions back into a running workflow.
-*   **Observability**: A small sidecar stack with **Prometheus** and **Grafana** for monitoring.
+TraceRail is a closed-loop, human-in-the-loop automation platform designed to process complex tasks by intelligently combining deterministic business rules, generative AI, and human oversight.
 
-> _No images from GHCR; all pullable anonymously from Docker Hub or built locally._
+## 1. Current State & Architecture
 
-## Prerequisites
+The project has successfully completed its initial "vertical slice" implementation, along with a foundational observability stack. The current state is as follows:
 
-- **Python 3.12** (use pyenv for version management)
-- **Poetry** for Python dependency management
-- **Docker** and **Docker Compose** for services
-- **LLM API Key** (DeepSeek recommended: https://platform.deepseek.com/api_keys or OpenAI: https://platform.openai.com/api-keys)
+*   **Unified Development Environment:** A single `docker-compose up --build` command launches the entire platform, including:
+    *   `tracerail-task-bridge`: The API backend.
+    *   `tracerail-core`: The Temporal worker for business logic.
+    *   A full observability stack with Prometheus, Grafana, and Jaeger.
+*   **End-to-End Workflow:** A case can be created via a `POST` request to the API. It is processed by a (mock) AI agent, and can then be viewed and approved/rejected by a human in the Action Center. The system can handle both active and completed cases.
+*   **Three Pillars of Observability:**
+    *   **Logging:** All backend services use structured (JSON) logging.
+    *   **Metrics:** The API exposes key performance indicators that can be visualized in a pre-configured Grafana dashboard.
+    *   **Tracing:** The system is fully instrumented with OpenTelemetry for end-to-end distributed tracing, viewable in Jaeger.
 
----
+## 2. Quick Start
 
-## Quick start
+**Prerequisites:**
+- Docker and Docker Compose
 
-```bash
-# clone
- git clone https://github.com/tracerail/tracerail-bootstrap.git
- cd tracerail-bootstrap
+**Instructions:**
+1. Clone all necessary repositories (`tracerail-bootstrap`, `tracerail-core`, `tracerail-task-bridge`, `tracerail-action-center`) into the same parent directory.
+2. Navigate to the `tracerail-bootstrap` directory.
+3. Run `docker-compose up --build`. This will build all the container images and start the full application stack.
 
-# automated setup (recommended)
- make setup
+**Accessing Services:**
+*   **Action Center (UI):** http://localhost:3002
+*   **Task Bridge API Docs:** http://localhost:8000/docs
+*   **Temporal UI:** http://localhost:8233
+*   **Grafana Dashboard:** http://localhost:3001 (admin / admin)
+*   **Jaeger Traces:** http://localhost:16686
 
-# or manual setup:
- # pyenv install 3.12.8 && pyenv local 3.12.8
- # make setup  # Creates .env from .env.example
- # # Edit .env and add your LLM API key
- # poetry install
- # make up
+## 3. Next Steps
 
-# test that the services are running and the worker can connect
- make start-example
+With the stable and observable foundation now in place, the project is ready to begin implementing the core automation logic as defined in the [System Blueprint](./docs/SYSTEM_BLUEPRINT.md).
 
-# start the worker (in a new terminal)
- make worker
+The immediate next step is to implement the **Pre-Rules Gate (DMN)**.
 
-# launch a sample workflow with a custom message
- poetry run python cli/start_example.py "Your custom message here"
-```
+## 4. Key Documentation
 
-*   **Temporal UI**: http://localhost:8233
-*   **Task Bridge API**: http://localhost:7070/docs
-*   **Grafana Dashboards**: http://localhost:3000 (admin / grafana)
-
----
-
-## Environment Variables
-
-The system uses environment variables for configuration. Run the setup script to configure automatically:
-
-```bash
-make setup
-```
-
-Or configure manually:
-```bash
-cp .env.example .env
-# Edit .env and set your LLM API key:
-# DEEPSEEK_API_KEY=sk-your-actual-deepseek-api-key-here
-# OR
-# OPENAI_API_KEY=sk-your-actual-openai-api-key-here
-```
-
-**Getting an LLM API Key:**
-
-**Option 1: DeepSeek (Recommended - More Cost Effective)**
-1. Visit https://platform.deepseek.com/api_keys
-2. Create a new API key
-3. Add it to your `.env` file: `DEEPSEEK_API_KEY=your-key-here`
-
-**Option 2: OpenAI**
-1. Visit https://platform.openai.com/api-keys
-2. Create a new API key
-3. Add it to your `.env` file: `OPENAI_API_KEY=your-key-here`
-
-Without an API key, the system will use mock responses for testing.
-
-**Test your setup:**
-```bash
-make start-example
-# For a full list of commands:
-make help
-```
-
----
+*   **[System Blueprint](./docs/SYSTEM_BLUEPRINT.md):** The high-level vision and target architecture for the platform.
+*   **[System Architecture](./docs/architecture.md):** A detailed description of the components and data flow.
+*   **[Technical Debt Task List](./docs/TECH_DEBT.md):** A list of known shortcuts and areas for improvement.
